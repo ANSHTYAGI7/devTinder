@@ -4,8 +4,13 @@ const connectDb = require("./config/database");
 const User = require("./models/users");
 const bcrypt = require("bcrypt");
 const { userSignupValidation } = require("./utils/validation");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+
+const { userAuth } = require("./middlewares/auth");
 
 app.use(express.json()); //This is a built-in middleware function in Express. It parses incoming requests with JSON payloads and is based on body-parser.
+app.use(cookieParser());
 
 app.post("/users", async (req, res) => {
   try {
@@ -37,6 +42,47 @@ app.post("/users", async (req, res) => {
     }
   }
 });
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email: email });
+
+  if (!user) {
+    return res.status(400).json({ message: "Invalid Email" });
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password); //here the user is the extracted object above by User.findone();
+
+  if (isPasswordValid) {
+    const token = jwt.sign({ _id: user._id }, "AnshTyagiSecretKeyIsHere");
+    res.cookie("token", token);
+
+    res.send("User LoggedIn");
+  }
+  if (!isPasswordValid) {
+    res.send("Invalid Credentials");
+  }
+});
+
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send(user);
+  } catch (err) {
+    res.send("The error occured here is given" + err.message);
+  }
+});
+
+app.post("/sendConnectionRequestToUsers", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    console.log(user);
+    res.send("The Request is send by the user " + user.firstName);
+  } catch (err) {
+    res.send("The error occured here is given" + err.message);
+  }
+});
+
 app.get("/users", async (req, res) => {
   try {
     const users = await User.find({}, { firstName: 1, _id: 0 });
