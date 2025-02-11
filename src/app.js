@@ -51,10 +51,12 @@ app.post("/login", async (req, res) => {
     return res.status(400).json({ message: "Invalid Email" });
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password); //here the user is the extracted object above by User.findone();
-
+  const isPasswordValid = await user.isPasswordValid(password); //here the user is the extracted object above by User.findone();
+  console.log(isPasswordValid);
+  //req.body.password also works here
   if (isPasswordValid) {
-    const token = jwt.sign({ _id: user._id }, "AnshTyagiSecretKeyIsHere");
+    const token = await user.generateAuthToken();
+
     res.cookie("token", token);
 
     res.send("User LoggedIn");
