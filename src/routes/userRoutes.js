@@ -15,4 +15,6 @@ userRoute.patch("/users/:userId", userAuth, userController.updateUser);
 
 userRoute.delete("/user", userController.deleteUser);
 
+userRoute.post("/logout", userAuth, userController.logoutUser);
+
 module.exports = userRoute;

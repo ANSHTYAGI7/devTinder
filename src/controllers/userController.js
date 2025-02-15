@@ -35,25 +35,29 @@ exports.userSignup = async (req, res) => {
 };
 
 exports.userLogin = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email: email });
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email: email });
 
-  if (!user) {
-    return res.status(400).json({ message: "Invalid Email" });
-  }
+    if (!user) {
+      return res.status(400).json({ message: "Invalid Email" });
+    }
 
-  const isPasswordValid = await user.isPasswordValid(password); //here the user is the extracted object above by User.findone();
-  console.log(isPasswordValid);
-  //req.body.password also works here
-  if (isPasswordValid) {
-    const token = await user.generateAuthToken();
+    const isPasswordValid = await user.isPasswordValid(password); //here the user is the extracted object above by User.findone();
+    console.log(isPasswordValid);
+    //req.body.password also works here
+    if (isPasswordValid) {
+      const token = await user.generateAuthToken();
 
-    res.cookie("token", token);
+      res.cookie("token", token);
 
-    res.send("User LoggedIn");
-  }
-  if (!isPasswordValid) {
-    res.send("Invalid Credentials");
+      res.send("User LoggedIn");
+    }
+    if (!isPasswordValid) {
+      res.send("Invalid Credentials");
+    }
+  } catch (err) {
+    res.status(400).send({ error: err.message });
   }
 };
 
@@ -109,5 +113,16 @@ exports.deleteUser = async (req, res) => {
     res.send(deletedUser);
   } catch (err) {
     res.status(404).send(err);
+  }
+};
+
+exports.logoutUser = async (req, res) => {
+  try {
+    res.clearCookie("token");
+    res
+      .status(200)
+      .json({ message: `The user ${req.user.firstName} is logged Out` });
+  } catch (err) {
+    res.send(err);
   }
 };
